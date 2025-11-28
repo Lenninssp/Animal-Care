@@ -9,81 +9,119 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Animal_Care
 build_property.RootNamespace = Animal_Care
-build_property.ProjectDir = C:\Users\Admin\developer\lasalle\DW4\Animal-Care\Animal-Care\
+build_property.ProjectDir = C:\Users\campu\source\repos\AnimalCare\Animal-Care\Animal-Care\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 7.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\Admin\developer\lasalle\DW4\Animal-Care\Animal-Care
+build_property.MSBuildProjectDirectory = C:\Users\campu\source\repos\AnimalCare\Animal-Care\Animal-Care
 build_property._RazorSourceGeneratorDebug = 
-build_property.EffectiveAnalysisLevelStyle = 7.0
-build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Appointments/Create.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Appointments/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRzXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Appointments/Delete.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Appointments/Delete.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRzXERlbGV0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Appointments/Details.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Appointments/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRzXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Appointments/Edit.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Appointments/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRzXEVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Appointments/Index.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Appointments/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Home/Index.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Home/Privacy.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Shared/Error.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/MedicalRecords/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVkaWNhbFJlY29yZHNcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/MedicalRecords/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVkaWNhbFJlY29yZHNcRGVsZXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/MedicalRecords/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVkaWNhbFJlY29yZHNcRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/MedicalRecords/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVkaWNhbFJlY29yZHNcRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/MedicalRecords/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVkaWNhbFJlY29yZHNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Pets/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGV0c1xDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Pets/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGV0c1xEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Pets/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGV0c1xEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Pets/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGV0c1xFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Pets/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGV0c1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Users/Create.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Users/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlcnNcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Users/Delete.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Users/Delete.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlcnNcRGVsZXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Users/Details.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Users/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlcnNcRGV0YWlscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Users/Edit.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Users/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlcnNcRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Users/Index.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Users/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlcnNcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/_ViewImports.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/_ViewStart.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Admin/developer/lasalle/DW4/Animal-Care/Animal-Care/Views/Shared/_Layout.cshtml]
+[C:/Users/campu/source/repos/AnimalCare/Animal-Care/Animal-Care/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-ani73hhimi

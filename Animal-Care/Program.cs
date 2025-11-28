@@ -2,6 +2,7 @@ using Animal_Care.Models;
 using Microsoft.EntityFrameworkCore;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 string? myConnection = builder.Configuration.GetConnectionString("MyConnectionString");
