@@ -1,7 +1,15 @@
+using Animal_Care.Models;
+using Microsoft.EntityFrameworkCore;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+string? myConnection = builder.Configuration.GetConnectionString("MyConnectionString");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<AnimalCare2Context>(options => { options.UseSqlServer(myConnection); });
 
 var app = builder.Build();
 
