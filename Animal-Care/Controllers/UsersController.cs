@@ -6,17 +6,63 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Animal_Care.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace Animal_Care.Controllers
 {
     public class UsersController : Controller
     {
         private readonly AnimalCare2Context _context;
+        private readonly PasswordHasher<User> _passwordHasher = new PasswordHasher<User>();
 
         public UsersController(AnimalCare2Context context)
         {
             _context = context;
         }
+
+        // GET: Users/Register
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        // POST: Users/Register
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Check if email already exists
+            if (_context.Users.Any(u => u.Email == model.Email))
+            {
+                ModelState.AddModelError("", "Email already registered.");
+                return View(model);
+            }
+
+            // Create user entity
+            var user = new User
+            {
+                Email = model.Email,
+                FullName = model.FullName,
+                Phone = model.Phone,
+                RoleId = 2 // default role: user (example)
+            };
+
+            // Hash password
+            user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // (Optional) automatically log the user in  
+            // or redirect to login
+            return RedirectToAction("Index", "Home");
+        }
+
 
         // GET: Users
         public async Task<IActionResult> Index()
