@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Animal_Care.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Animal_Care.Models;
-using Microsoft.AspNetCore.Identity;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 namespace Animal_Care.Controllers
 {
     public class UsersController : Controller
@@ -18,6 +19,60 @@ namespace Animal_Care.Controllers
         public UsersController(AnimalCare2Context context)
         {
             _context = context;
+        }
+
+        // GET: Users/Login
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        // POST: Users/Login
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Find user
+            var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Invalid email or password.");
+                return View(model);
+            }
+
+            // Verify password hash
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
+
+            if (result == PasswordVerificationResult.Failed)
+            {
+                ModelState.AddModelError("", "Invalid email or password.");
+                return View(model);
+            }
+
+            // Create claims
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.FullName),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.RoleId.ToString())
+    };
+
+            var identity = new ClaimsIdentity(claims, "Cookies");
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync("Cookies", principal);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync("Cookies");
+            return RedirectToAction("Login", "Users");
         }
 
         // GET: Users/Register
