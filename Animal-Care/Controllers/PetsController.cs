@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Animal_Care.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Animal_Care.Controllers
 {
+    [Authorize(Roles = "Admin,Receptionist")]
     public class PetsController : Controller
     {
         private readonly AnimalCare2Context _context;
@@ -47,26 +47,37 @@ namespace Animal_Care.Controllers
         // GET: Pets/Create
         public IActionResult Create()
         {
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Id");
+            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name");
             return View();
         }
 
         // POST: Pets/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Species,Age,OwnerId")] Pet pet)
+        public async Task<IActionResult> Create(Pet pet)
         {
-            if (ModelState.IsValid)
+            ModelState.Remove("Owner");
+
+            if (!ModelState.IsValid)
             {
-                _context.Add(pet);
+                ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
+                return View(pet);
+            }
+
+            try
+            {
+                _context.Pets.Add(pet);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Id", pet.OwnerId);
-            return View(pet);
+            catch (System.Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Error saving pet: {ex.Message}");
+                ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
+                return View(pet);
+            }
         }
+
 
         // GET: Pets/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -81,16 +92,14 @@ namespace Animal_Care.Controllers
             {
                 return NotFound();
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Id", pet.OwnerId);
+            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
             return View(pet);
         }
 
         // POST: Pets/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Species,Age,OwnerId")] Pet pet)
+        public async Task<IActionResult> Edit(int id, Pet pet)
         {
             if (id != pet.Id)
             {
@@ -103,6 +112,7 @@ namespace Animal_Care.Controllers
                 {
                     _context.Update(pet);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -115,9 +125,9 @@ namespace Animal_Care.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Id", pet.OwnerId);
+
+            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
             return View(pet);
         }
 
@@ -147,21 +157,21 @@ namespace Animal_Care.Controllers
         {
             if (_context.Pets == null)
             {
-                return Problem("Entity set 'AnimalCare2Context.Pets'  is null.");
+                return Problem("Entity set 'AnimalCare2Context.Pets' is null.");
             }
             var pet = await _context.Pets.FindAsync(id);
             if (pet != null)
             {
                 _context.Pets.Remove(pet);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool PetExists(int id)
         {
-          return (_context.Pets?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Pets?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }

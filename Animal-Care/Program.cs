@@ -12,7 +12,22 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AnimalCare2Context>(options => { options.UseSqlServer(myConnection); });
 
+
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/Users/Login";
+        options.LogoutPath = "/Users/Logout";
+        options.AccessDeniedPath = "/Users/Login";
+    });
+
+builder.Services.AddAuthorization();
+
+
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

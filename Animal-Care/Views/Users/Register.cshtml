@@ -1,0 +1,87 @@
+﻿@model Animal_Care.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Create New User";
+}
+
+<h1>Create New User</h1>
+
+<p>
+    <a asp-action="Index">Back to List</a>
+</p>
+
+<form asp-action="Register" method="post">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Input</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>Email</td>
+                <td>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Password</td>
+                <td>
+                    <input asp-for="Password" class="form-control" type="password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Confirm Password</td>
+                <td>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Full Name</td>
+                <td>
+                    <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Phone</td>
+                <td>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Role</td>
+                <td>
+                    <select asp-for="RoleId" asp-items="Model.Roles" class="form-control">
+                        <option value="">-- Select a Role --</option>
+                    </select>
+                    <span asp-validation-for="RoleId" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
+                <td></td>
+                <td>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Animal_Care.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Animal_Care.Controllers
 {
+    [Authorize(Roles = "Admin,Receptionist")]
     public class AppointmentsController : Controller
     {
         private readonly AnimalCare2Context _context;
@@ -21,7 +23,11 @@ namespace Animal_Care.Controllers
         // GET: Appointments
         public async Task<IActionResult> Index()
         {
-            var animalCare2Context = _context.Appointments.Include(a => a.AppointmentType).Include(a => a.Pet).Include(a => a.RecepcionistUser).Include(a => a.Vet);
+            var animalCare2Context = _context.Appointments
+                .Include(a => a.AppointmentType)
+                .Include(a => a.Pet)
+                .Include(a => a.RecepcionistUser)
+                .Include(a => a.Vet);
             return View(await animalCare2Context.ToListAsync());
         }
 
@@ -50,31 +56,92 @@ namespace Animal_Care.Controllers
         // GET: Appointments/Create
         public IActionResult Create()
         {
-            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Id");
-            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Id");
-            ViewData["RecepcionistUserId"] = new SelectList(_context.Users, "Id", "Id");
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId");
+            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name");
+            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Name");
+            ViewData["VetId"] = new SelectList(
+                _context.Veterinarians.Include(v => v.User),
+                "UserId",
+                "User.FullName"
+            );
+            // Receptionist is set automatically in POST
             return View();
         }
 
         // POST: Appointments/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,StartTime,EndTime,Status,PetId,VetId,RecepcionistUserId,AppointmentTypeId,CreatedAt,UpdatedAt,CanceledAt")] Appointment appointment)
+        public async Task<IActionResult> Create(Appointment appointment)
         {
-            if (ModelState.IsValid)
+            // These navigation properties are not posted by the form, ignore them for validation
+            ModelState.Remove("Pet");
+            ModelState.Remove("Vet");
+            ModelState.Remove("AppointmentType");
+            ModelState.Remove("RecepcionistUser");
+            ModelState.Remove("MedicalRecordAppointments");
+            ModelState.Remove("MedicalRecordIdNavigation");
+
+            // We set the receptionist in code, not from the form
+            ModelState.Remove("RecepcionistUserId");
+
+            // Default status if empty
+            if (string.IsNullOrWhiteSpace(appointment.Status))
             {
-                _context.Add(appointment);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                appointment.Status = "Scheduled";
             }
-            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Id", appointment.AppointmentTypeId);
-            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Id", appointment.PetId);
-            ViewData["RecepcionistUserId"] = new SelectList(_context.Users, "Id", "Id", appointment.RecepcionistUserId);
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", appointment.VetId);
-            return View(appointment);
+
+            // Basic validation: EndTime must be after StartTime
+            if (appointment.EndTime <= appointment.StartTime)
+            {
+                ModelState.AddModelError("", "End time must be after start time.");
+            }
+
+            // Check clinic hours
+            var dayName = appointment.StartTime.DayOfWeek.ToString(); // "Monday", etc.
+            var clinicHours = await _context.ClinicHours
+                .FirstOrDefaultAsync(ch => ch.DayOfWeek == dayName);
+
+            if (clinicHours == null)
+            {
+                ModelState.AddModelError("", "Clinic hours are not configured for this day.");
+            }
+            else
+            {
+                var startTime = appointment.StartTime.TimeOfDay;
+                var endTime = appointment.EndTime.TimeOfDay;
+
+                if (startTime < clinicHours.OpenTime || endTime > clinicHours.CloseTime)
+                {
+                    ModelState.AddModelError("", "Appointment is outside clinic opening hours.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
+                ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Name", appointment.PetId);
+                ViewData["VetId"] = new SelectList(
+                    _context.Veterinarians.Include(v => v.User),
+                    "UserId",
+                    "User.FullName",
+                    appointment.VetId
+                );
+                return View(appointment);
+            }
+
+            // Set receptionist as currently logged-in user
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(userIdString, out var userId))
+            {
+                appointment.RecepcionistUserId = userId;
+            }
+
+            // Set timestamps
+            appointment.CreatedAt = DateTime.Now;
+            appointment.UpdatedAt = DateTime.Now;
+
+            _context.Add(appointment);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Appointments/Edit/5
@@ -90,50 +157,89 @@ namespace Animal_Care.Controllers
             {
                 return NotFound();
             }
-            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Id", appointment.AppointmentTypeId);
-            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Id", appointment.PetId);
-            ViewData["RecepcionistUserId"] = new SelectList(_context.Users, "Id", "Id", appointment.RecepcionistUserId);
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", appointment.VetId);
+            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
+            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Name", appointment.PetId);
+            ViewData["VetId"] = new SelectList(
+                _context.Veterinarians.Include(v => v.User),
+                "UserId",
+                "User.FullName",
+                appointment.VetId
+            );
             return View(appointment);
         }
 
         // POST: Appointments/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,StartTime,EndTime,Status,PetId,VetId,RecepcionistUserId,AppointmentTypeId,CreatedAt,UpdatedAt,CanceledAt")] Appointment appointment)
+        public async Task<IActionResult> Edit(int id, Appointment appointment)
         {
             if (id != appointment.Id)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            // Same navigation props ignore
+            ModelState.Remove("Pet");
+            ModelState.Remove("Vet");
+            ModelState.Remove("AppointmentType");
+            ModelState.Remove("RecepcionistUser");
+            ModelState.Remove("MedicalRecordAppointments");
+            ModelState.Remove("MedicalRecordIdNavigation");
+
+            // Basic validation
+            if (appointment.EndTime <= appointment.StartTime)
             {
-                try
-                {
-                    _context.Update(appointment);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AppointmentExists(appointment.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "End time must be after start time.");
             }
-            ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Id", appointment.AppointmentTypeId);
-            ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Id", appointment.PetId);
-            ViewData["RecepcionistUserId"] = new SelectList(_context.Users, "Id", "Id", appointment.RecepcionistUserId);
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", appointment.VetId);
-            return View(appointment);
+
+            var dayName = appointment.StartTime.DayOfWeek.ToString();
+            var clinicHours = await _context.ClinicHours
+                .FirstOrDefaultAsync(ch => ch.DayOfWeek == dayName);
+
+            if (clinicHours != null)
+            {
+                var startTime = appointment.StartTime.TimeOfDay;
+                var endTime = appointment.EndTime.TimeOfDay;
+
+                if (startTime < clinicHours.OpenTime || endTime > clinicHours.CloseTime)
+                {
+                    ModelState.AddModelError("", "Appointment is outside clinic opening hours.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
+                ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Name", appointment.PetId);
+                ViewData["VetId"] = new SelectList(
+                    _context.Veterinarians.Include(v => v.User),
+                    "UserId",
+                    "User.FullName",
+                    appointment.VetId
+                );
+                return View(appointment);
+            }
+
+            try
+            {
+                // update timestamp
+                appointment.UpdatedAt = DateTime.Now;
+
+                _context.Update(appointment);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!AppointmentExists(appointment.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Appointments/Delete/5
@@ -165,21 +271,21 @@ namespace Animal_Care.Controllers
         {
             if (_context.Appointments == null)
             {
-                return Problem("Entity set 'AnimalCare2Context.Appointments'  is null.");
+                return Problem("Entity set 'AnimalCare2Context.Appointments' is null.");
             }
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment != null)
             {
                 _context.Appointments.Remove(appointment);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool AppointmentExists(int id)
         {
-          return (_context.Appointments?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Appointments?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
