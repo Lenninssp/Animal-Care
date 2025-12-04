@@ -1,0 +1,87 @@
+﻿@model Animal_Care.Models.MonthlyReportViewModel
+
+@{
+    ViewData["Title"] = "Monthly Report";
+    var monthName = new DateTime(Model.Year, Model.Month, 1).ToString("MMMM");
+}
+
+<h1>Monthly Report</h1>
+<h4>@monthName @Model.Year</h4>
+<hr />
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-auto">
+            <label for="month" class="form-label">Month</label>
+            <select id="month" name="month" class="form-select">
+                @for (int m = 1; m <= 12; m++)
+                {
+                    var name = new DateTime(Model.Year, m, 1).ToString("MMMM");
+                    <option value="@m" selected="@(m == Model.Month ? "selected" : null)">
+                        @name
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <label for="year" class="form-label">Year</label>
+            <input id="year" name="year" type="number" class="form-control"
+                   value="@Model.Year" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-primary">Go</button>
+        </div>
+    </div>
+</form>
+
+<h5>Overall Appointments</h5>
+<table class="table table-bordered w-auto">
+    <thead>
+        <tr>
+            <th>Total</th>
+            <th>Scheduled</th>
+            <th>Completed</th>
+            <th>Canceled</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>@Model.TotalAppointments</td>
+            <td>@Model.ScheduledCount</td>
+            <td>@Model.CompletedCount</td>
+            <td>@Model.CanceledCount</td>
+        </tr>
+    </tbody>
+</table>
+
+<h5>Vet Workload</h5>
+@if (Model.VetWorkloads.Any())
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Veterinarian</th>
+                <th>Total</th>
+                <th>Scheduled</th>
+                <th>Completed</th>
+                <th>Canceled</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var v in Model.VetWorkloads)
+            {
+                <tr>
+                    <td>@v.VetName</td>
+                    <td>@v.TotalAppointments</td>
+                    <td>@v.ScheduledCount</td>
+                    <td>@v.CompletedCount</td>
+                    <td>@v.CanceledCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No appointments for this month.</p>
+}

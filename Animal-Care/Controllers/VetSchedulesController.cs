@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -23,8 +22,11 @@ namespace Animal_Care.Controllers
         // GET: VetSchedules
         public async Task<IActionResult> Index()
         {
-            var animalCare2Context = _context.VetSchedules.Include(v => v.Vet);
-            return View(await animalCare2Context.ToListAsync());
+            var schedules = _context.VetSchedules
+                .Include(vs => vs.Vet)
+                    .ThenInclude(v => v.User);   // so you can show vet name in the view
+
+            return View(await schedules.ToListAsync());
         }
 
         // GET: VetSchedules/Details/5
@@ -36,8 +38,10 @@ namespace Animal_Care.Controllers
             }
 
             var vetSchedule = await _context.VetSchedules
-                .Include(v => v.Vet)
+                .Include(vs => vs.Vet)
+                    .ThenInclude(v => v.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (vetSchedule == null)
             {
                 return NotFound();
@@ -49,25 +53,42 @@ namespace Animal_Care.Controllers
         // GET: VetSchedules/Create
         public IActionResult Create()
         {
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId");
+            ViewData["VetId"] = new SelectList(
+                _context.Veterinarians.Include(v => v.User),
+                "UserId",
+                "User.FullName"
+            );
             return View();
         }
 
         // POST: VetSchedules/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,VetId,DayOfWeek,StartTime,EndTime")] VetSchedule vetSchedule)
+        public async Task<IActionResult> Create(VetSchedule vetSchedule)
         {
-            if (ModelState.IsValid)
+            // Ignore navigation property
+            ModelState.Remove("Vet");
+
+            // Basic validation: end after start
+            if (vetSchedule.EndTime <= vetSchedule.StartTime)
             {
-                _context.Add(vetSchedule);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "End time must be after start time.");
             }
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", vetSchedule.VetId);
-            return View(vetSchedule);
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["VetId"] = new SelectList(
+                    _context.Veterinarians.Include(v => v.User),
+                    "UserId",
+                    "User.FullName",
+                    vetSchedule.VetId
+                );
+                return View(vetSchedule);
+            }
+
+            _context.Add(vetSchedule);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: VetSchedules/Edit/5
@@ -83,44 +104,61 @@ namespace Animal_Care.Controllers
             {
                 return NotFound();
             }
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", vetSchedule.VetId);
+
+            ViewData["VetId"] = new SelectList(
+                _context.Veterinarians.Include(v => v.User),
+                "UserId",
+                "User.FullName",
+                vetSchedule.VetId
+            );
             return View(vetSchedule);
         }
 
         // POST: VetSchedules/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,VetId,DayOfWeek,StartTime,EndTime")] VetSchedule vetSchedule)
+        public async Task<IActionResult> Edit(int id, VetSchedule vetSchedule)
         {
             if (id != vetSchedule.Id)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            ModelState.Remove("Vet");
+
+            if (vetSchedule.EndTime <= vetSchedule.StartTime)
             {
-                try
-                {
-                    _context.Update(vetSchedule);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!VetScheduleExists(vetSchedule.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "End time must be after start time.");
             }
-            ViewData["VetId"] = new SelectList(_context.Veterinarians, "UserId", "UserId", vetSchedule.VetId);
-            return View(vetSchedule);
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["VetId"] = new SelectList(
+                    _context.Veterinarians.Include(v => v.User),
+                    "UserId",
+                    "User.FullName",
+                    vetSchedule.VetId
+                );
+                return View(vetSchedule);
+            }
+
+            try
+            {
+                _context.Update(vetSchedule);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!VetScheduleExists(vetSchedule.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: VetSchedules/Delete/5
@@ -132,8 +170,10 @@ namespace Animal_Care.Controllers
             }
 
             var vetSchedule = await _context.VetSchedules
-                .Include(v => v.Vet)
+                .Include(vs => vs.Vet)
+                    .ThenInclude(v => v.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (vetSchedule == null)
             {
                 return NotFound();
@@ -149,21 +189,21 @@ namespace Animal_Care.Controllers
         {
             if (_context.VetSchedules == null)
             {
-                return Problem("Entity set 'AnimalCare2Context.VetSchedules'  is null.");
+                return Problem("Entity set 'AnimalCare2Context.VetSchedules' is null.");
             }
             var vetSchedule = await _context.VetSchedules.FindAsync(id);
             if (vetSchedule != null)
             {
                 _context.VetSchedules.Remove(vetSchedule);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool VetScheduleExists(int id)
         {
-          return (_context.VetSchedules?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.VetSchedules?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }

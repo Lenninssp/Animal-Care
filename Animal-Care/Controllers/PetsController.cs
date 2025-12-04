@@ -78,7 +78,6 @@ namespace Animal_Care.Controllers
             }
         }
 
-
         // GET: Pets/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -106,29 +105,31 @@ namespace Animal_Care.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            ModelState.Remove("Owner");
+
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(pet);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PetExists(pet.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
+                return View(pet);
             }
 
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "Id", "Name", pet.OwnerId);
-            return View(pet);
+            try
+            {
+                _context.Update(pet);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PetExists(pet.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         // GET: Pets/Delete/5
@@ -159,12 +160,26 @@ namespace Animal_Care.Controllers
             {
                 return Problem("Entity set 'AnimalCare2Context.Pets' is null.");
             }
-            var pet = await _context.Pets.FindAsync(id);
-            if (pet != null)
+
+            var pet = await _context.Pets
+                .Include(p => p.Appointments)
+                .Include(p => p.MedicalRecords)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pet == null)
             {
-                _context.Pets.Remove(pet);
+                return RedirectToAction(nameof(Index));
             }
 
+            // ❌ Block delete if there are related rows
+            if (pet.Appointments.Any() || pet.MedicalRecords.Any())
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot delete this pet because it has existing appointments or medical records.";
+                return RedirectToAction(nameof(Details), new { id = pet.Id });
+            }
+
+            _context.Pets.Remove(pet);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

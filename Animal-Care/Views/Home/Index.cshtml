@@ -1,8 +1,275 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model Animal_Care.Models.HomeDashboardViewModel
+
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (!Model.IsAuthenticated)
+{
+    <div class="row align-items-center py-5">
+        <div class="col-md-6 mb-4 mb-md-0">
+            <h1 class="display-5 fw-semibold mb-3">Animal Care Clinic</h1>
+            <p class="lead text-muted mb-3">
+                A simple management system for veterinary clinics.
+            </p>
+            <p class="text-muted">
+                Manage appointments, owners, pets, and medical records in one place.
+                Sign in to access your dashboard, or contact the clinic to learn more.
+            </p>
+        </div>
+        <div class="col-md-6 text-center">
+            <img src="~/images/logo.png"
+                 class="img-fluid rounded"
+                 alt="Veterinary clinic" />
+        </div>
+    </div>
+}
+else
+{
+    <div class="home-hero mb-4">
+        <h1 class="display-6 fw-semibold mb-1">
+            Welcome, @Model.UserName
+        </h1>
+        <p class="text-muted mb-0">
+            @if (Model.Role == "Veterinarian")
+            {
+                @:Here is a quick view of your upcoming appointments.
+            }
+            else if (Model.Role == "Receptionist")
+            {
+                @:Today’s schedule and quick actions.
+            }
+            else if (Model.Role == "Admin")
+            {
+                @:Overview of clinic activity this month.
+            }
+            else
+            {
+                @:Clinic dashboard.
+            }
+        </p>
+    </div>
+
+    @if (Model.Role == "Veterinarian")
+    {
+        <!-- VETERINARIAN DASHBOARD -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Upcoming appointments</h5>
+
+                @if (Model.VetUpcomingAppointments != null && Model.VetUpcomingAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 18%;">Date and time</th>
+                                    <th style="width: 20%;">Pet</th>
+                                    <th style="width: 30%;">Owner</th>
+                                    <th style="width: 20%;">Type</th>
+                                    <th style="width: 12%;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.VetUpcomingAppointments)
+                                {
+                                    <tr>
+                                        <td>@item.StartTime.ToString("g")</td>
+                                        <td>@item.PetName</td>
+                                        <td>@item.OwnerName</td>
+                                        <td>@item.TypeName</td>
+                                        <td>@item.Status</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No upcoming appointments.</p>
+                }
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title mb-2">Shortcuts</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="Appointments" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        All appointments
+                    </a>
+                    <a asp-controller="MedicalRecords" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Medical records
+                    </a>
+                    <a asp-controller="Pets" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Pets
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.Role == "Receptionist")
+    {
+        <!-- RECEPTIONIST DASHBOARD -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Today’s appointments</h5>
+
+                        @if (Model.TodayAppointments != null && Model.TodayAppointments.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 18%;">Time</th>
+                                            <th style="width: 20%;">Pet</th>
+                                            <th style="width: 24%;">Owner</th>
+                                            <th style="width: 24%;">Veterinarian</th>
+                                            <th style="width: 14%;">Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.TodayAppointments)
+                                        {
+                                            <tr>
+                                                <td>@item.StartTime.ToString("t")</td>
+                                                <td>@item.PetName</td>
+                                                <td>@item.OwnerName</td>
+                                                <td>@item.VetName</td>
+                                                <td>@item.TypeName</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">No appointments scheduled for today.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Quick actions</h6>
+                        <p class="text-muted small">
+                            Use these links to manage the front desk work.
+                        </p>
+                        <div class="d-flex flex-column gap-2">
+                            <a asp-controller="Appointments" asp-action="Create" class="btn btn-primary btn-sm">
+                                New appointment
+                            </a>
+                            <a asp-controller="Appointments" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                All appointments
+                            </a>
+                            <a asp-controller="Owners" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                Owners
+                            </a>
+                            <a asp-controller="Pets" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                Pets
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.Role == "Admin")
+    {
+        <!-- ADMIN DASHBOARD -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Owners</div>
+                        <div class="fs-4 fw-semibold">@Model.TotalOwners</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Pets</div>
+                        <div class="fs-4 fw-semibold">@Model.TotalPets</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Users</div>
+                        <div class="fs-4 fw-semibold">@Model.TotalUsers</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Appointments this month</div>
+                        <div class="fs-4 fw-semibold">@Model.TotalAppointmentsThisMonth</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Appointment status this month</h5>
+                <div class="row">
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Scheduled</div>
+                        <div class="fs-5 fw-semibold">@Model.ScheduledThisMonth</div>
+                    </div>
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Completed</div>
+                        <div class="fs-5 fw-semibold">@Model.CompletedThisMonth</div>
+                    </div>
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Canceled</div>
+                        <div class="fs-5 fw-semibold">@Model.CanceledThisMonth</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title mb-2">Reports and configuration</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="Reports" asp-action="Monthly" class="btn btn-outline-secondary btn-sm">
+                        Monthly report
+                    </a>
+                    <a asp-controller="Users" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Users
+                    </a>
+                    <a asp-controller="Veterinarians" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Veterinarians
+                    </a>
+                    <a asp-controller="VetSchedules" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Vet schedules
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Fallback for any other role -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="mb-0 text-muted">
+                    You are signed in, but no specific dashboard is defined for your role.
+                </p>
+            </div>
+        </div>
+    }
+}

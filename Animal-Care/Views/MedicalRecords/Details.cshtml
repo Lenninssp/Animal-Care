@@ -1,60 +1,82 @@
 ﻿@model Animal_Care.Models.MedicalRecord
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Medical Record Details";
 }
 
-<h1>Details</h1>
+<h1>Medical Record Details</h1>
 
-<div>
-    <h4>MedicalRecord</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.VisitDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.VisitDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Diagnosis)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Diagnosis)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Treatment)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Treatment)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Appointment)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Appointment.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdNavigation.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Pet)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Pet.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Vet)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Vet.UserId)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header">
+                Appointment & Patient
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Pet:</strong>
+                    @Model.Pet?.Name (@Model.Pet?.Species)
+                </p>
+                <p>
+                    <strong>Owner:</strong>
+                    @Model.Pet?.Owner?.Name
+                </p>
+                <p>
+                    <strong>Veterinarian:</strong>
+                    @Model.Vet?.User?.FullName
+                </p>
+                <p>
+                    <strong>Appointment:</strong>
+                    @Model.Appointment?.StartTime.ToString("g")
+                </p>
+                <p>
+                    <strong>Visit Date:</strong>
+                    @Model.VisitDate.ToShortDateString()
+                </p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                Diagnosis
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrWhiteSpace(Model.Diagnosis))
+                {
+                    <p>@Model.Diagnosis</p>
+                }
+                else
+                {
+                    <p class="text-muted">No diagnosis recorded.</p>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                Treatment
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrWhiteSpace(Model.Treatment))
+                {
+                    <p>@Model.Treatment</p>
+                }
+                else
+                {
+                    <p class="text-muted">No treatment recorded.</p>
+                }
+            </div>
+        </div>
+
+        <div class="mt-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+            }
+        </div>
+    </div>
 </div>

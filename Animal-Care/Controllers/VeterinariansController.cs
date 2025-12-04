@@ -21,8 +21,10 @@ namespace Animal_Care.Controllers
         // GET: Veterinarians
         public async Task<IActionResult> Index()
         {
-            var animalCare2Context = _context.Veterinarians.Include(v => v.User);
-            return View(await animalCare2Context.ToListAsync());
+            var vets = _context.Veterinarians
+                .Include(v => v.User); // so we can show FullName, Email, etc.
+
+            return View(await vets.ToListAsync());
         }
 
         // GET: Veterinarians/Details/5
@@ -36,6 +38,7 @@ namespace Animal_Care.Controllers
             var veterinarian = await _context.Veterinarians
                 .Include(v => v.User)
                 .FirstOrDefaultAsync(m => m.UserId == id);
+
             if (veterinarian == null)
             {
                 return NotFound();
@@ -47,7 +50,7 @@ namespace Animal_Care.Controllers
         // GET: Veterinarians/Create
         public IActionResult Create()
         {
-            // Show only users that have the "Veterinarian" role, display FullName
+            // Only users that already have the "Veterinarian" role
             ViewData["UserId"] = new SelectList(
                 _context.Users
                     .Include(u => u.Role)
@@ -62,28 +65,32 @@ namespace Animal_Care.Controllers
         // POST: Veterinarians/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserId,Specialty")] Veterinarian veterinarian)
+        public async Task<IActionResult> Create(Veterinarian veterinarian)
         {
-            // Ignore navigation property 'User' during validation
+            // Ignore navigation property
             ModelState.Remove("User");
+            ModelState.Remove("Appointments");
+            ModelState.Remove("MedicalRecords");
+            ModelState.Remove("VetSchedules");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(veterinarian);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ViewData["UserId"] = new SelectList(
+                    _context.Users
+                        .Include(u => u.Role)
+                        .Where(u => u.Role.Name == "Veterinarian"),
+                    "Id",
+                    "FullName",
+                    veterinarian.UserId
+                );
+
+                return View(veterinarian);
             }
 
-            ViewData["UserId"] = new SelectList(
-                _context.Users
-                    .Include(u => u.Role)
-                    .Where(u => u.Role.Name == "Veterinarian"),
-                "Id",
-                "FullName",
-                veterinarian.UserId
-            );
+            _context.Add(veterinarian);
+            await _context.SaveChangesAsync();
 
-            return View(veterinarian);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Veterinarians/Edit/5
@@ -115,7 +122,7 @@ namespace Animal_Care.Controllers
         // POST: Veterinarians/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("UserId,Specialty")] Veterinarian veterinarian)
+        public async Task<IActionResult> Edit(int id, Veterinarian veterinarian)
         {
             if (id != veterinarian.UserId)
             {
@@ -123,38 +130,42 @@ namespace Animal_Care.Controllers
             }
 
             ModelState.Remove("User");
+            ModelState.Remove("Appointments");
+            ModelState.Remove("MedicalRecords");
+            ModelState.Remove("VetSchedules");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(veterinarian);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!VeterinarianExists(veterinarian.UserId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ViewData["UserId"] = new SelectList(
+                    _context.Users
+                        .Include(u => u.Role)
+                        .Where(u => u.Role.Name == "Veterinarian"),
+                    "Id",
+                    "FullName",
+                    veterinarian.UserId
+                );
+
+                return View(veterinarian);
             }
 
-            ViewData["UserId"] = new SelectList(
-                _context.Users
-                    .Include(u => u.Role)
-                    .Where(u => u.Role.Name == "Veterinarian"),
-                "Id",
-                "FullName",
-                veterinarian.UserId
-            );
+            try
+            {
+                _context.Update(veterinarian);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!VeterinarianExists(veterinarian.UserId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
-            return View(veterinarian);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Veterinarians/Delete/5
@@ -168,6 +179,7 @@ namespace Animal_Care.Controllers
             var veterinarian = await _context.Veterinarians
                 .Include(v => v.User)
                 .FirstOrDefaultAsync(m => m.UserId == id);
+
             if (veterinarian == null)
             {
                 return NotFound();
@@ -185,6 +197,7 @@ namespace Animal_Care.Controllers
             {
                 return Problem("Entity set 'AnimalCare2Context.Veterinarians'  is null.");
             }
+
             var veterinarian = await _context.Veterinarians.FindAsync(id);
             if (veterinarian != null)
             {

@@ -1,22 +1,147 @@
-html {
-  font-size: 14px;
-}
+/* -------------------------------------------------------
+   LIGHT CLINIC THEME — Blue accents, light background
+   ------------------------------------------------------- */
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* GLOBAL */
 body {
-  margin-bottom: 60px;
+    background-color: #e9ecef; /* light grey */
+    color: #212529; /* standard dark text */
 }
+
+/* ---------------------------
+   NAVIGATION BAR
+   --------------------------- */
+.app-navbar,
+.navbar {
+    background-color: #1b1f24 !important;
+    border-bottom: 1px solid #2a2f36 !important;
+}
+
+.navbar-brand {
+    color: #f8f9fa !important;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+
+.navbar-nav .nav-link {
+    padding: .5rem .75rem;
+    font-weight: 500;
+    color: #e1e5ea !important; 
+    transition: color .15s ease-in-out;
+}
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus {
+        color: #4da3ff !important; 
+    }
+
+.navbar-text {
+    font-size: .9rem;
+    color: #ced4da !important;
+}
+
+/* ---------------------------
+   CARDS
+   --------------------------- */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6 !important;
+    color: #212529;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #212529;
+}
+
+.card.shadow-sm {
+    box-shadow: 0 1px 3px rgba(0,0,0,.1) !important;
+}
+
+/* ---------------------------
+   TABLES
+   --------------------------- */
+.table {
+    color: #212529;
+    border-color: #dee2e6;
+}
+
+    .table thead tr {
+        background-color: #f1f3f5;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .table tbody tr,
+    .table-striped > tbody > tr:nth-of-type(odd),
+    .table-striped > tbody > tr:nth-of-type(even) {
+        color: #212529;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+/* ---------------------------
+   BUTTONS
+   --------------------------- */
+.btn-primary {
+    background-color: #357ded !important;
+    border-color: #357ded !important;
+}
+
+    .btn-primary:hover {
+        background-color: #2d6fd4 !important;
+    }
+
+.btn-outline-secondary {
+    color: #495057 !important;
+    border-color: #adb5bd !important;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #e9ecef !important;
+        border-color: #868e96 !important;
+        color: #212529 !important;
+    }
+
+/* ---------------------------
+   FOOTER
+   --------------------------- */
+footer,
+.app-footer {
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6 !important;
+    color: #6c757d;
+}
+
+/* ---------------------------
+   HOME HERO (top welcome area)
+   --------------------------- */
+.home-hero {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+    .home-hero h1 {
+        color: #212529;
+    }
+
+    .home-hero p {
+        color: #6c757d;
+    }
+
+/* ---------------------------
+   LINKS
+   --------------------------- */
+a {
+    color: #0d6efd;
+}
+
+    a:hover {
+        color: #0a58ca;
+    }

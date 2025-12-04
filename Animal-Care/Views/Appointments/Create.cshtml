@@ -1,68 +1,170 @@
 ﻿@model Animal_Care.Models.Appointment
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Create Appointment";
 }
 
-<h1>Create</h1>
+<h1>Create Appointment</h1>
 
-<h4>Appointment</h4>
-<hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="form-group">
-                <label asp-for="StartTime" class="control-label"></label>
-                <input asp-for="StartTime" class="form-control" type="datetime-local" />
-                <span asp-validation-for="StartTime" class="text-danger"></span>
+    <div class="col-md-5">
+        <div class="card mb-3">
+            <div class="card-header">
+                New Appointment
             </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
 
-            <div class="form-group">
-                <label asp-for="EndTime" class="control-label"></label>
-                <input asp-for="EndTime" class="form-control" type="datetime-local" />
-                <span asp-validation-for="EndTime" class="text-danger"></span>
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="StartTime" class="control-label"></label>
+                        <input asp-for="StartTime" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="StartTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="EndTime" class="control-label"></label>
+                        <input asp-for="EndTime" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="EndTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="Status" class="control-label"></label>
+                        <select asp-for="Status" class="form-control">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Canceled">Canceled</option>
+                            <option value="Complete">Complete</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="PetId" class="control-label"></label>
+                        <select asp-for="PetId" class="form-control" asp-items="ViewBag.PetId"></select>
+                        <span asp-validation-for="PetId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="VetId" class="control-label"></label>
+                        <select asp-for="VetId" class="form-control" asp-items="ViewBag.VetId"></select>
+                        <span asp-validation-for="VetId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="AppointmentTypeId" class="control-label"></label>
+                        <select asp-for="AppointmentTypeId" class="form-control" asp-items="ViewBag.AppointmentTypeId"></select>
+                        <span asp-validation-for="AppointmentTypeId" class="text-danger"></span>
+                    </div>
+
+                    @* RecepcionistUserId, CreatedAt, UpdatedAt, CanceledAt are all set in the controller *@
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </form>
             </div>
+        </div>
+    </div>
 
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control">
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="Canceled">Canceled</option>
-                    <option value="Complete">Complete</option>
-                </select>
-                <span asp-validation-for="Status" class="text-danger"></span>
+    <!-- Availability side panel -->
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header">
+                Veterinarian Schedules
             </div>
-
-            <div class="form-group">
-                <label asp-for="PetId" class="control-label"></label>
-                <select asp-for="PetId" class="form-control" asp-items="ViewBag.PetId"></select>
-                <span asp-validation-for="PetId" class="text-danger"></span>
+            <div class="card-body p-2">
+                @{
+                    var schedules = ViewBag.VetSchedules as IEnumerable<Animal_Care.Models.VetSchedule>;
+                }
+                @if (schedules != null && schedules.Any())
+                {
+                    var grouped = schedules.GroupBy(vs => vs.Vet.User.FullName);
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Veterinarian</th>
+                                    <th>Day</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var group in grouped)
+                                {
+                                    foreach (var item in group)
+                                    {
+                                        <tr>
+                                            <td>@group.Key</td>
+                                            <td>@item.DayOfWeek</td>
+                                            <td>@item.StartTime.ToString(@"hh\:mm")</td>
+                                            <td>@item.EndTime.ToString(@"hh\:mm")</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted">
+                        Appointments must be inside both clinic hours and these vet schedules.
+                    </small>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No vet schedules configured yet.</p>
+                }
             </div>
+        </div>
 
-            <div class="form-group">
-                <label asp-for="VetId" class="control-label"></label>
-                <select asp-for="VetId" class="form-control" asp-items="ViewBag.VetId"></select>
-                <span asp-validation-for="VetId" class="text-danger"></span>
+        <div class="card">
+            <div class="card-header">
+                Upcoming Appointments (next ones)
             </div>
-
-            <div class="form-group">
-                <label asp-for="AppointmentTypeId" class="control-label"></label>
-                <select asp-for="AppointmentTypeId" class="form-control" asp-items="ViewBag.AppointmentTypeId"></select>
-                <span asp-validation-for="AppointmentTypeId" class="text-danger"></span>
+            <div class="card-body p-2">
+                @{
+                    var upcoming = ViewBag.UpcomingAppointments as IEnumerable<Animal_Care.Models.Appointment>;
+                }
+                @if (upcoming != null && upcoming.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Pet</th>
+                                    <th>Vet</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in upcoming)
+                                {
+                                    <tr>
+                                        <td>@a.StartTime.ToString("yyyy-MM-dd")</td>
+                                        <td>@a.StartTime.ToString("HH:mm") - @a.EndTime.ToString("HH:mm")</td>
+                                        <td>@a.Pet?.Name</td>
+                                        <td>@a.Vet?.User?.FullName</td>
+                                        <td>
+                                            <span class="badge bg-@(a.Status == "Canceled" ? "danger" : (a.Status == "Complete" ? "success" : "primary"))">
+                                                @a.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No upcoming appointments.</p>
+                }
             </div>
-
-            @* We do NOT show RecepcionistUserId, CreatedAt, UpdatedAt, CanceledAt here.
-            RecepcionistUserId and timestamps are set in the controller. *@
-
-            <div class="form-group mt-2">
-                <input type="submit" value="Create" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 

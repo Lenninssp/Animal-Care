@@ -23,12 +23,16 @@ namespace Animal_Care.Controllers
         // GET: Appointments
         public async Task<IActionResult> Index()
         {
-            var animalCare2Context = _context.Appointments
+            var appointments = _context.Appointments
                 .Include(a => a.AppointmentType)
                 .Include(a => a.Pet)
+                    .ThenInclude(p => p.Owner)
                 .Include(a => a.RecepcionistUser)
-                .Include(a => a.Vet);
-            return View(await animalCare2Context.ToListAsync());
+                .Include(a => a.Vet)
+                    .ThenInclude(v => v.User)
+                .OrderBy(a => a.StartTime);
+
+            return View(await appointments.ToListAsync());
         }
 
         // GET: Appointments/Details/5
@@ -42,9 +46,12 @@ namespace Animal_Care.Controllers
             var appointment = await _context.Appointments
                 .Include(a => a.AppointmentType)
                 .Include(a => a.Pet)
+                    .ThenInclude(p => p.Owner)
                 .Include(a => a.RecepcionistUser)
                 .Include(a => a.Vet)
+                    .ThenInclude(v => v.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (appointment == null)
             {
                 return NotFound();
@@ -63,6 +70,10 @@ namespace Animal_Care.Controllers
                 "UserId",
                 "User.FullName"
             );
+
+            // For display: vet schedules and upcoming appointments
+            LoadAvailabilityDataForView();
+
             // Receptionist is set automatically in POST
             return View();
         }
@@ -72,7 +83,7 @@ namespace Animal_Care.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Appointment appointment)
         {
-            // These navigation properties are not posted by the form, ignore them for validation
+            // Navigation props not posted by the form
             ModelState.Remove("Pet");
             ModelState.Remove("Vet");
             ModelState.Remove("AppointmentType");
@@ -95,8 +106,9 @@ namespace Animal_Care.Controllers
                 ModelState.AddModelError("", "End time must be after start time.");
             }
 
-            // Check clinic hours
             var dayName = appointment.StartTime.DayOfWeek.ToString(); // "Monday", etc.
+
+            // 1) Check clinic hours (global)
             var clinicHours = await _context.ClinicHours
                 .FirstOrDefaultAsync(ch => ch.DayOfWeek == dayName);
 
@@ -115,6 +127,43 @@ namespace Animal_Care.Controllers
                 }
             }
 
+            // 2) Check vet's personal schedule
+            var vetSchedules = await _context.VetSchedules
+                .Where(vs => vs.VetId == appointment.VetId && vs.DayOfWeek == dayName)
+                .ToListAsync();
+
+            if (!vetSchedules.Any())
+            {
+                ModelState.AddModelError("", "This veterinarian has no schedule defined for that day.");
+            }
+            else
+            {
+                var apptStart = appointment.StartTime.TimeOfDay;
+                var apptEnd = appointment.EndTime.TimeOfDay;
+
+                var fitsInSomeSchedule = vetSchedules.Any(vs =>
+                    apptStart >= vs.StartTime && apptEnd <= vs.EndTime
+                );
+
+                if (!fitsInSomeSchedule)
+                {
+                    ModelState.AddModelError("", "Appointment is outside this veterinarian's working hours.");
+                }
+            }
+
+            // 3) Check overlapping appointments for this vet
+            var overlaps = await _context.Appointments
+                .Where(a => a.VetId == appointment.VetId
+                            && a.Status != "Canceled"
+                            && a.StartTime < appointment.EndTime
+                            && a.EndTime > appointment.StartTime)
+                .AnyAsync();
+
+            if (overlaps)
+            {
+                ModelState.AddModelError("", "This veterinarian already has an appointment in that time range.");
+            }
+
             if (!ModelState.IsValid)
             {
                 ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
@@ -125,6 +174,8 @@ namespace Animal_Care.Controllers
                     "User.FullName",
                     appointment.VetId
                 );
+
+                LoadAvailabilityDataForView();
                 return View(appointment);
             }
 
@@ -157,6 +208,7 @@ namespace Animal_Care.Controllers
             {
                 return NotFound();
             }
+
             ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
             ViewData["PetId"] = new SelectList(_context.Pets, "Id", "Name", appointment.PetId);
             ViewData["VetId"] = new SelectList(
@@ -165,6 +217,8 @@ namespace Animal_Care.Controllers
                 "User.FullName",
                 appointment.VetId
             );
+
+            LoadAvailabilityDataForView();
             return View(appointment);
         }
 
@@ -178,13 +232,22 @@ namespace Animal_Care.Controllers
                 return NotFound();
             }
 
-            // Same navigation props ignore
+            // Ignore navigation props + system fields for validation
             ModelState.Remove("Pet");
             ModelState.Remove("Vet");
             ModelState.Remove("AppointmentType");
             ModelState.Remove("RecepcionistUser");
             ModelState.Remove("MedicalRecordAppointments");
             ModelState.Remove("MedicalRecordIdNavigation");
+            ModelState.Remove("RecepcionistUserId");
+            ModelState.Remove("CreatedAt");
+            ModelState.Remove("UpdatedAt");
+
+            // Default status if somehow empty
+            if (string.IsNullOrWhiteSpace(appointment.Status))
+            {
+                appointment.Status = "Scheduled";
+            }
 
             // Basic validation
             if (appointment.EndTime <= appointment.StartTime)
@@ -193,6 +256,8 @@ namespace Animal_Care.Controllers
             }
 
             var dayName = appointment.StartTime.DayOfWeek.ToString();
+
+            // 1) Clinic hours
             var clinicHours = await _context.ClinicHours
                 .FirstOrDefaultAsync(ch => ch.DayOfWeek == dayName);
 
@@ -207,6 +272,44 @@ namespace Animal_Care.Controllers
                 }
             }
 
+            // 2) Vet schedule
+            var vetSchedules = await _context.VetSchedules
+                .Where(vs => vs.VetId == appointment.VetId && vs.DayOfWeek == dayName)
+                .ToListAsync();
+
+            if (!vetSchedules.Any())
+            {
+                ModelState.AddModelError("", "This veterinarian has no schedule defined for that day.");
+            }
+            else
+            {
+                var apptStart = appointment.StartTime.TimeOfDay;
+                var apptEnd = appointment.EndTime.TimeOfDay;
+
+                var fitsInSomeSchedule = vetSchedules.Any(vs =>
+                    apptStart >= vs.StartTime && apptEnd <= vs.EndTime
+                );
+
+                if (!fitsInSomeSchedule)
+                {
+                    ModelState.AddModelError("", "Appointment is outside this veterinarian's working hours.");
+                }
+            }
+
+            // 3) Overlaps — exclude this same appointment
+            var overlaps = await _context.Appointments
+                .Where(a => a.VetId == appointment.VetId
+                            && a.Id != appointment.Id
+                            && a.Status != "Canceled"
+                            && a.StartTime < appointment.EndTime
+                            && a.EndTime > appointment.StartTime)
+                .AnyAsync();
+
+            if (overlaps)
+            {
+                ModelState.AddModelError("", "This veterinarian already has an appointment in that time range.");
+            }
+
             if (!ModelState.IsValid)
             {
                 ViewData["AppointmentTypeId"] = new SelectList(_context.AppointmentTypes, "Id", "Name", appointment.AppointmentTypeId);
@@ -217,15 +320,42 @@ namespace Animal_Care.Controllers
                     "User.FullName",
                     appointment.VetId
                 );
+
+                LoadAvailabilityDataForView();
                 return View(appointment);
             }
 
+            // Load existing entity and update only allowed fields
+            var existing = await _context.Appointments.FindAsync(id);
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            existing.StartTime = appointment.StartTime;
+            existing.EndTime = appointment.EndTime;
+            existing.Status = appointment.Status;
+            existing.PetId = appointment.PetId;
+            existing.VetId = appointment.VetId;
+            existing.AppointmentTypeId = appointment.AppointmentTypeId;
+
+            // Handle canceled flag
+            if (appointment.Status == "Canceled")
+            {
+                if (existing.CanceledAt == null)
+                {
+                    existing.CanceledAt = DateTime.Now;
+                }
+            }
+            else
+            {
+                existing.CanceledAt = null;
+            }
+
+            existing.UpdatedAt = DateTime.Now;
+
             try
             {
-                // update timestamp
-                appointment.UpdatedAt = DateTime.Now;
-
-                _context.Update(appointment);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -239,6 +369,7 @@ namespace Animal_Care.Controllers
                     throw;
                 }
             }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -253,9 +384,12 @@ namespace Animal_Care.Controllers
             var appointment = await _context.Appointments
                 .Include(a => a.AppointmentType)
                 .Include(a => a.Pet)
+                    .ThenInclude(p => p.Owner)
                 .Include(a => a.RecepcionistUser)
                 .Include(a => a.Vet)
+                    .ThenInclude(v => v.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (appointment == null)
             {
                 return NotFound();
@@ -273,19 +407,52 @@ namespace Animal_Care.Controllers
             {
                 return Problem("Entity set 'AnimalCare2Context.Appointments' is null.");
             }
+
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment != null)
             {
-                _context.Appointments.Remove(appointment);
+                // Soft delete: mark as canceled instead of removing
+                appointment.Status = "Canceled";
+                appointment.CanceledAt = DateTime.Now;
+                appointment.UpdatedAt = DateTime.Now;
+
+                _context.Update(appointment);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool AppointmentExists(int id)
         {
             return (_context.Appointments?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+
+        /// <summary>
+        /// Loads vet schedules and upcoming appointments into ViewBag
+        /// to help receptionists see availability.
+        /// </summary>
+        private void LoadAvailabilityDataForView()
+        {
+            var vetSchedules = _context.VetSchedules
+                .Include(vs => vs.Vet)
+                    .ThenInclude(v => v.User)
+                .OrderBy(vs => vs.Vet.User.FullName)
+                .ThenBy(vs => vs.DayOfWeek)
+                .ThenBy(vs => vs.StartTime)
+                .ToList();
+
+            var upcomingAppointments = _context.Appointments
+                .Include(a => a.Vet)
+                    .ThenInclude(v => v.User)
+                .Include(a => a.Pet)
+                .Where(a => a.Status != "Canceled" && a.StartTime >= DateTime.Today)
+                .OrderBy(a => a.StartTime)
+                .Take(20)
+                .ToList();
+
+            ViewBag.VetSchedules = vetSchedules;
+            ViewBag.UpcomingAppointments = upcomingAppointments;
         }
     }
 }

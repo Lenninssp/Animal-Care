@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -22,6 +23,8 @@ namespace Animal_Care.Controllers
             _context = context;
         }
 
+        // ===================== AUTH =====================
+
         // GET: Users/Login
         [AllowAnonymous]
         public IActionResult Login()
@@ -38,7 +41,6 @@ namespace Animal_Care.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Find user WITH role
             var user = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == model.Email);
@@ -49,7 +51,6 @@ namespace Animal_Care.Controllers
                 return View(model);
             }
 
-            // Verify password hash
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
 
             if (result == PasswordVerificationResult.Failed)
@@ -58,7 +59,6 @@ namespace Animal_Care.Controllers
                 return View(model);
             }
 
-            // Create claims - use role NAME instead of ID
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -82,6 +82,8 @@ namespace Animal_Care.Controllers
             return RedirectToAction("Login", "Users");
         }
 
+        // ===================== SELF-REGISTER =====================
+
         // GET: Users/Register
         [AllowAnonymous]
         public IActionResult Register()
@@ -92,7 +94,7 @@ namespace Animal_Care.Controllers
                     .Select(r => new SelectListItem
                     {
                         Value = r.Id.ToString(),
-                        Text = r.Name // display role name
+                        Text = r.Name
                     })
                     .ToList()
             };
@@ -108,7 +110,6 @@ namespace Animal_Care.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // Need to repopulate roles if we redisplay the form
                 model.Roles = _context.Roles
                     .Select(r => new SelectListItem
                     {
@@ -120,7 +121,6 @@ namespace Animal_Care.Controllers
                 return View(model);
             }
 
-            // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email == model.Email))
             {
                 ModelState.AddModelError("", "Email already registered.");
@@ -136,7 +136,6 @@ namespace Animal_Care.Controllers
                 return View(model);
             }
 
-            // Ensure role exists
             var role = await _context.Roles.FindAsync(model.RoleId);
             if (role == null)
             {
@@ -153,16 +152,14 @@ namespace Animal_Care.Controllers
                 return View(model);
             }
 
-            // Create user entity
             var user = new User
             {
                 Email = model.Email,
                 FullName = model.FullName,
                 Phone = model.Phone,
-                RoleId = model.RoleId!.Value // RoleId is nullable in VM but required
+                RoleId = model.RoleId!.Value
             };
 
-            // Hash password
             user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
 
             _context.Users.Add(user);
@@ -171,12 +168,14 @@ namespace Animal_Care.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // ===================== ADMIN CRUD =====================
+
         // GET: Users
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
-            var animalCare2Context = _context.Users.Include(u => u.Role);
-            return View(await animalCare2Context.ToListAsync());
+            var users = _context.Users.Include(u => u.Role);
+            return View(await users.ToListAsync());
         }
 
         // GET: Users/Details/5
@@ -208,21 +207,42 @@ namespace Animal_Care.Controllers
             return View();
         }
 
-        // POST: Users/Create
+        // POST: Users/Create (admin)
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Email,PasswordHash,FullName,Phone,RoleId")] User user)
+        public async Task<IActionResult> Create(User user)
         {
-            if (ModelState.IsValid)
+            // We treat PasswordHash property as the plain password input here
+            var rawPassword = user.PasswordHash;
+
+            // Remove any validation errors for navigation props if any
+            ModelState.Remove("Role");
+            ModelState.Remove("Appointments");
+            ModelState.Remove("Veterinarian");
+
+            if (string.IsNullOrWhiteSpace(rawPassword))
             {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("PasswordHash", "Password is required.");
             }
 
-            ViewData["RoleId"] = new SelectList(_context.Roles, "Id", "Name", user.RoleId);
-            return View(user);
+            if (await _context.Users.AnyAsync(u => u.Email == user.Email))
+            {
+                ModelState.AddModelError("Email", "Email already registered.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["RoleId"] = new SelectList(_context.Roles, "Id", "Name", user.RoleId);
+                return View(user);
+            }
+
+            // Hash the raw password and save
+            user.PasswordHash = _passwordHasher.HashPassword(user, rawPassword);
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Users/Edit/5
@@ -248,36 +268,54 @@ namespace Animal_Care.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Email,PasswordHash,FullName,Phone,RoleId")] User user)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Email,FullName,Phone,RoleId")] User edited)
         {
-            if (id != user.Id)
+            if (id != edited.Id)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            // Remove nav props from validation
+            ModelState.Remove("Role");
+            ModelState.Remove("Appointments");
+            ModelState.Remove("Veterinarian");
+            ModelState.Remove("PasswordHash"); // we don't edit password here
+
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UserExists(user.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ViewData["RoleId"] = new SelectList(_context.Roles, "Id", "Name", edited.RoleId);
+                return View(edited);
             }
 
-            ViewData["RoleId"] = new SelectList(_context.Roles, "Id", "Name", user.RoleId);
-            return View(user);
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Update allowed fields only
+            user.Email = edited.Email;
+            user.FullName = edited.FullName;
+            user.Phone = edited.Phone;
+            user.RoleId = edited.RoleId;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(user.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Users/Delete/5
@@ -312,13 +350,50 @@ namespace Animal_Care.Controllers
                 return Problem("Entity set 'AnimalCare2Context.Users' is null.");
             }
 
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
+            var currentUserIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int.TryParse(currentUserIdString, out var currentUserId);
+
+            var user = await _context.Users
+                .Include(u => u.Appointments)
+                .Include(u => u.Veterinarian)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
             {
-                _context.Users.Remove(user);
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
+            // Prevent deleting yourself
+            if (currentUserId == id)
+            {
+                TempData["ErrorMessage"] = "You cannot delete your own account.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            // Prevent deleting if referenced as vet or receptionist
+            var hasAppointments = user.Appointments != null && user.Appointments.Any();
+            var isVet = user.Veterinarian != null;
+
+            if (hasAppointments || isVet)
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot delete this user because they are referenced in appointments or as a veterinarian. " +
+                    "Reassign or remove those records first.";
+
+                return RedirectToAction("Details", new { id });
+            }
+
+            try
+            {
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error deleting user: " + ex.Message;
+                return RedirectToAction("Details", new { id });
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

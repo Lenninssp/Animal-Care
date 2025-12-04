@@ -1,36 +1,38 @@
 ﻿@model Animal_Care.Models.ClinicHour
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Clinic Hours Details";
 }
 
-<h1>Details</h1>
+<h1>Clinic Hours Details</h1>
 
 <div>
-    <h4>ClinicHour</h4>
+    <h4>Clinic Hours</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DayOfWeek)
+        <dt class="col-sm-2">
+            Day
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DayOfWeek)
+        <dd class="col-sm-10">
+            @Model.DayOfWeek
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.OpenTime)
+
+        <dt class="col-sm-2">
+            Open Time
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.OpenTime)
+        <dd class="col-sm-10">
+            @Model.OpenTime.ToString(@"hh\:mm")
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CloseTime)
+
+        <dt class="col-sm-2">
+            Close Time
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CloseTime)
+        <dd class="col-sm-10">
+            @Model.CloseTime.ToString(@"hh\:mm")
         </dd>
     </dl>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </div>

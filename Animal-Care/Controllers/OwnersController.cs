@@ -23,9 +23,9 @@ namespace Animal_Care.Controllers
         // GET: Owners
         public async Task<IActionResult> Index()
         {
-              return _context.Owners != null ? 
-                          View(await _context.Owners.ToListAsync()) :
-                          Problem("Entity set 'AnimalCare2Context.Owners'  is null.");
+            return _context.Owners != null
+                ? View(await _context.Owners.ToListAsync())
+                : Problem("Entity set 'AnimalCare2Context.Owners' is null.");
         }
 
         // GET: Owners/Details/5
@@ -53,8 +53,6 @@ namespace Animal_Care.Controllers
         }
 
         // POST: Owners/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Phone,Email")] Owner owner)
@@ -85,8 +83,6 @@ namespace Animal_Care.Controllers
         }
 
         // POST: Owners/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Phone,Email")] Owner owner)
@@ -144,21 +140,45 @@ namespace Animal_Care.Controllers
         {
             if (_context.Owners == null)
             {
-                return Problem("Entity set 'AnimalCare2Context.Owners'  is null.");
+                return Problem("Entity set 'AnimalCare2Context.Owners' is null.");
             }
-            var owner = await _context.Owners.FindAsync(id);
-            if (owner != null)
+
+            var owner = await _context.Owners
+                .Include(o => o.Pets)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (owner == null)
+            {
+                return NotFound();
+            }
+
+            // Prevent deleting owners that still have pets
+            if (owner.Pets != null && owner.Pets.Any())
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot delete this owner because they have one or more registered pets. " +
+                    "Delete or reassign their pets first.";
+
+                return RedirectToAction("Details", new { id });
+            }
+
+            try
             {
                 _context.Owners.Remove(owner);
+                await _context.SaveChangesAsync();
             }
-            
-            await _context.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error deleting owner: " + ex.Message;
+                return RedirectToAction("Details", new { id });
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool OwnerExists(int id)
         {
-          return (_context.Owners?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Owners?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
