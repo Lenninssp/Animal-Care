@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Animal_Care.Models
 {
@@ -20,5 +22,13 @@ namespace Animal_Care.Models
 
         [Required]
         public string Phone { get; set; }
+
+        // MUST be nullable so [Required] can work correctly
+        [Required(ErrorMessage = "Please select a role.")]
+        public int? RoleId { get; set; }
+
+        // For the dropdown
+        public IEnumerable<SelectListItem>? Roles { get; set; }
+
     }
 }

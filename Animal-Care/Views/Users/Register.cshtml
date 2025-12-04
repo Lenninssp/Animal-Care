@@ -61,6 +61,16 @@
             </tr>
 
             <tr>
+                <td>Role</td>
+                <td>
+                    <select asp-for="RoleId" asp-items="Model.Roles" class="form-control">
+                        <option value="">-- Select a Role --</option>
+                    </select>
+                    <span asp-validation-for="RoleId" class="text-danger"></span>
+                </td>
+            </tr>
+
+            <tr>
                 <td></td>
                 <td>
                     <button type="submit" class="btn btn-primary">Create User</button>
